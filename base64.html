@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Base64 Bulk Encripter</title>
+    <style>
+        body {
+            font-family: Impact, Haettenschweiler, 'Arial Narrow Bold', sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            justify-content: center;
+            display: flex;
+            flex-direction: column;
+            overflow-x: hidden;
+        }
+        #box {
+            margin-top: 10px;
+        }
+        #result {
+            margin-top: 10px;
+            font-size: 12px;
+            background-color: #ebebeb;
+            border: 1px grey solid;
+            padding: 8px;
+            border-radius: 4px;
+            min-height: 6em;
+        }
+
+        #tip {
+            font-size: 10px;
+            margin-top: 4px;;
+        }
+
+        #alert {
+            color: rgb(16, 143, 16);
+            position: absolute;
+            margin-top: calc(40% - 34px);
+            width: 100%;
+            text-align: center;
+            font-size: 68px;
+            opacity: 0.6;
+            }
+    </style>
+</head>
+<body>
+    <h3>Geekhunter Base64 Encoder</h3>
+    <textarea name="" id="box" cols="100" rows="30" onkeyup="encode()"></textarea>
+    <span style="display: none;" id="alert">copied to clipboard!</span>
+    <div id="result" style="cursor: pointer;" onclick="copy()"></div>
+    <span id="tip">Click to copy</span>
+
+    <script>
+        function encode() {
+            let value = document.getElementById('box').value;
+            let arr = value.split('\n')
+            document.getElementById('result').innerHTML  = '';
+            arr.forEach(line => {
+                let arr = line.split(': ')
+                if(arr.length > 1){
+                    document.getElementById('result').innerHTML = document.getElementById('result').innerHTML + arr[0] + ': ' + btoa(arr[1].trim()) + '<br>'
+                } else {
+                    document.getElementById('result').innerHTML = document.getElementById('result').innerHTML + btoa(arr[0].trim()) + '<br>'
+                }
+            });
+            
+            document.getElementById('alert').style.display = 'none';
+            
+        };
+        function copy() {
+            let text = document.getElementById('result').innerHTML
+            navigator.clipboard.writeText(text.replaceAll('<br>', '\r\n'))
+            document.getElementById('alert').style.display = 'block';
+            setTimeout(function () {
+                document.getElementById('alert').style.display = 'none';
+            }, 1000)
+        }
+    </script>
+</body>
+</html>
