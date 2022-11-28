@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -45,9 +46,14 @@
     </style>
 </head>
 <body>
-    <h3>Geekhunter Base64 Encoder</h3>
+    <h3>Base64 Encoder</h3>
+    <select name="operation" id="operation" onchange="encode()" style="padding: 10px 0;">
+        <option value="encode" style="padding: 10px;">encode</option>
+        <option value="decode">decode</option>
+    </select>
     <textarea name="" id="box" cols="100" rows="30" onkeyup="encode()"></textarea>
     <span style="display: none;" id="alert">copied to clipboard!</span>
+    
     <div id="result" style="cursor: pointer;" onclick="copy()"></div>
     <span id="tip">Click to copy</span>
 
@@ -58,10 +64,20 @@
             document.getElementById('result').innerHTML  = '';
             arr.forEach(line => {
                 let arr = line.split(': ')
-                if(arr.length > 1){
-                    document.getElementById('result').innerHTML = document.getElementById('result').innerHTML + arr[0] + ': ' + btoa(arr[1].trim()) + '<br>'
+                let operation = document.getElementById('operation').value;
+
+                if(operation == 'encode'){
+                    if(arr.length > 1){
+                        document.getElementById('result').innerHTML = document.getElementById('result').innerHTML + arr[0] + ': ' + btoa(arr[1].trim()) + '<br>'
+                    } else {
+                        document.getElementById('result').innerHTML = document.getElementById('result').innerHTML + btoa(arr[0].trim()) + '<br>'
+                    }
                 } else {
-                    document.getElementById('result').innerHTML = document.getElementById('result').innerHTML + btoa(arr[0].trim()) + '<br>'
+                    if(arr.length > 1){
+                        document.getElementById('result').innerHTML = document.getElementById('result').innerHTML + arr[0] + ': ' + atob(arr[1].trim()) + '<br>'
+                    } else {
+                        document.getElementById('result').innerHTML = document.getElementById('result').innerHTML + atob(arr[0].trim()) + '<br>'
+                    }
                 }
             });
             
