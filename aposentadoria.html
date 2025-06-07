@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simulador de Aposentadoria Avançado</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            background-color: #121a23;
+            color: #e0e0e0;
+            font-family: sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            background-color: #1e293b;
+            padding: 30px;
+            border-radius: 8px;
+            width: 100%;
+            max-width: 800px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        }
+        h1 {
+            color: #ffffff;
+            border-bottom: 2px solid #3b82f6;
+            padding-bottom: 10px;
+            margin-bottom: 30px;
+        }
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+        }
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+        label {
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+        input {
+            background-color: #334155;
+            border: 1px solid #475569;
+            color: #e0e0e0;
+            padding: 12px;
+            border-radius: 4px;
+            font-size: 16px;
+        }
+        .buttons {
+            margin-top: 30px;
+            display: flex;
+            gap: 15px;
+        }
+        button {
+            padding: 12px 25px;
+            border: none;
+            border-radius: 4px;
+            font-size: 16px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: background-color 0.3s;
+        }
+        #btn-calcular {
+            background-color: #3b82f6;
+            color: white;
+        }
+        #btn-calcular:hover {
+            background-color: #2563eb;
+        }
+        #btn-limpar {
+            background-color: #475569;
+            color: #e0e0e0;
+        }
+        #btn-limpar:hover {
+            background-color: #64748b;
+        }
+        #resultado {
+            margin-top: 30px;
+        }
+        .resultado-card {
+            background-color: #334155;
+            padding: 20px;
+            border-radius: 8px;
+            border-left: 5px solid #3b82f6;
+            margin-bottom: 20px;
+        }
+        .projection-card {
+            background-color: #475569;
+            padding: 15px;
+            border-radius: 6px;
+            text-align: center;
+        }
+        .projection-card h5 {
+            margin-top: 0;
+            border-bottom: 1px solid #64748b;
+            padding-bottom: 5px;
+        }
+        .valor-destaque {
+            color: #60a5fa;
+            font-size: 1.8em;
+            font-weight: bold;
+            display: block;
+            margin: 10px 0;
+        }
+        .texto-apoio {
+            font-size: 0.9em;
+            color: #cbd5e1;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>SIMULADOR DE APOSENTADORIA</h1>
+    <div class="form-grid">
+        <!-- Campos do formulário -->
+        <div class="form-group"><label for="salario">Quanto você ganha por mês?</label><input type="number" id="salario" value="10000"></div>
+        <div class="form-group"><label for="investido">Quanto você já tem investido?</label><input type="number" id="investido" value="125000"></div>
+        <div class="form-group"><label for="meta">Com quanto de patrimônio você quer se aposentar?</label><input type="number" id="meta" value="1000000"></div>
+        <div class="form-group"><label for="percentual">Quantos % da sua renda você investe?</label><input type="number" id="percentual" value="35"></div>
+        <div class="form-group"><label for="idade-atual">Qual sua idade atual?</label><input type="number" id="idade-atual" value="33"></div>
+        <div class="form-group"><label for="idade-aposentadoria">Com quantos anos você deseja se aposentar?</label><input type="number" id="idade-aposentadoria" value="50"></div>
+        <div class="form-group"><label for="rentabilidade">Sua rentabilidade total anual projetada (%)</label><input type="number" id="rentabilidade" value="8"></div>
+        <div class="form-group"><label for="gasto-aposentado">Quanto você pretende gastar por mês aposentado?</label><input type="number" id="gasto-aposentado" value="15000"></div>
+    </div>
+    <div class="buttons">
+        <button id="btn-calcular">Calcular</button>
+        <button id="btn-limpar">Limpar</button>
+    </div>
+    <div id="resultado" style="display:none;"></div>
+</div>
+
+<script>
+    let myChart;
+    const formatter = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
+
+    function calculateFutureValue(pv, pmt, rate, nper) {
+        if (rate === 0) return pv + pmt * nper;
+        const termo1 = pv * Math.pow(1 + rate, nper);
+        const termo2 = pmt * ((Math.pow(1 + rate, nper) - 1) / rate);
+        return termo1 + termo2;
+    }
+
+    document.getElementById('btn-calcular').addEventListener('click', () => {
+        // --- 1. Coleta de Dados ---
+        const salario = parseFloat(document.getElementById('salario').value);
+        const patrimonioAtual = parseFloat(document.getElementById('investido').value);
+        const metaPatrimonio = parseFloat(document.getElementById('meta').value);
+        const percentualInvestido = parseFloat(document.getElementById('percentual').value);
+        const idadeAtual = parseInt(document.getElementById('idade-atual').value);
+        const idadeAposentadoria = parseInt(document.getElementById('idade-aposentadoria').value);
+        const rentabilidadeAnual = parseFloat(document.getElementById('rentabilidade').value);
+        const gastoMensalAposentado = parseFloat(document.getElementById('gasto-aposentado').value);
+
+        // --- 2. Cálculos Principais ---
+        const aporteMensal = salario * (percentualInvestido / 100);
+        const anosParaAposentar = idadeAposentadoria - idadeAtual;
+        const mesesParaAposentar = anosParaAposentar * 12;
+        const taxaJurosMensal = Math.pow(1 + (rentabilidadeAnual / 100), 1/12) - 1;
+
+        const patrimonioAcumulado = calculateFutureValue(patrimonioAtual, aporteMensal, taxaJurosMensal, mesesParaAposentar);
+        const rendaPassivaMensal = patrimonioAcumulado * taxaJurosMensal;
+
+        // --- 3. Renderização do Bloco de Resultado Principal ---
+        const resultadoDiv = document.getElementById('resultado');
+        resultadoDiv.style.display = 'block';
+
+        let htmlResult = `
+            <div class="resultado-card">
+                <h3>Resultado da Simulação</h3>
+                <p>Com aportes mensais de ${formatter.format(aporteMensal)} por ${anosParaAposentar} anos, seu patrimônio aos ${idadeAposentadoria} anos será de:</p>
+                <h2>${formatter.format(patrimonioAcumulado)}</h2>
+                ${patrimonioAcumulado >= metaPatrimonio ?
+                    `<p style="color: #4ade80;">✅ Parabéns! Você atingirá sua meta de ${formatter.format(metaPatrimonio)}.</p>` :
+                    `<p style="color: #f87171;">⚠️ Atenção! Você não atingirá sua meta de ${formatter.format(metaPatrimonio)}. Faltarão ${formatter.format(metaPatrimonio - patrimonioAcumulado)}.</p>`
+                }
+            </div>`;
+        
+        // --- 4. Análise da Renda Passiva e Cálculo Corretivo ---
+        htmlResult += `<div class="resultado-card" id="analise-renda"><h4>Análise da Renda Passiva</h4>`;
+        
+        if (rendaPassivaMensal >= gastoMensalAposentado) {
+            htmlResult += `<p>Com o patrimônio acumulado, sua renda passiva mensal estimada seria de <strong>${formatter.format(rendaPassivaMensal)}</strong>.</p>`;
+            htmlResult += `<p style="color: #4ade80;">✅ Essa renda cobre seu gasto mensal desejado de ${formatter.format(gastoMensalAposentado)}.</p>`;
+        } else {
+            // ** LÓGICA CORRETIVA INSERIDA AQUI **
+            const deficit = gastoMensalAposentado - rendaPassivaMensal;
+            htmlResult += `<p>Com o patrimônio acumulado, sua renda passiva mensal estimada seria de <strong>${formatter.format(rendaPassivaMensal)}</strong>.</p>`;
+            htmlResult += `<p style="color: #f87171;">⚠️ Essa renda não cobre seu gasto mensal de ${formatter.format(gastoMensalAposentado)}. Haveria um déficit de ${formatter.format(deficit)} por mês.</p>`;
+            
+            // a) Calcular o patrimônio necessário para a renda desejada
+            const patrimonioNecessario = gastoMensalAposentado / taxaJurosMensal;
+
+            // b) Calcular novo aporte necessário
+            const pv_term = patrimonioAtual * Math.pow(1 + taxaJurosMensal, mesesParaAposentar);
+            const fv_factor = (Math.pow(1 + taxaJurosMensal, mesesParaAposentar) - 1) / taxaJurosMensal;
+            const novoAporte = (patrimonioNecessario - pv_term) / fv_factor;
+            const novoPercentual = (novoAporte / salario) * 100;
+
+            // c) Calcular nova idade de aposentadoria
+            const num = Math.log((patrimonioNecessario * taxaJurosMensal + aporteMensal) / (patrimonioAtual * taxaJurosMensal + aporteMensal));
+            const den = Math.log(1 + taxaJurosMensal);
+            const novosMeses = Math.ceil(num / den);
+            const novaIdade = idadeAtual + Math.ceil(novosMeses / 12);
+
+            htmlResult += `<hr style="border-color: #475569; margin: 20px 0;">
+                <p>Para alcançar uma renda passiva de <strong>${formatter.format(gastoMensalAposentado)}</strong>, você precisaria de um patrimônio de <strong>${formatter.format(patrimonioNecessario)}</strong>. Veja como chegar lá:</p>
+                <div class="form-grid" style="gap: 15px; margin-top: 15px;">
+                    <div class="projection-card">
+                        <h5>Opção 1: Investir Mais</h5>
+                        <span class="valor-destaque">${formatter.format(novoAporte)}</span>
+                        <span class="texto-apoio">por mês (${novoPercentual.toFixed(1)}% do seu salário)</span>
+                    </div>
+                    <div class="projection-card">
+                        <h5>Opção 2: Aposentar Mais Tarde</h5>
+                        <span class="valor-destaque">${novaIdade} anos</span>
+                        <span class="texto-apoio">(investindo por mais ${novaIdade - idadeAtual} anos)</span>
+                    </div>
+                </div>`;
+        }
+        htmlResult += `</div>`;
+
+
+        // --- 5. Renderização do Gráfico ---
+        htmlResult += `
+            <div class="resultado-card">
+                <h3>Evolução do Patrimônio</h3>
+                <canvas id="graficoPatrimonio"></canvas>
+            </div>`;
+        
+        resultadoDiv.innerHTML = htmlResult;
+
+        // Desenhar o gráfico
+        const ctx = document.getElementById('graficoPatrimonio').getContext('2d');
+        if (myChart) {
+            myChart.destroy();
+        }
+
+        const labelsAnos = [];
+        const dataPatrimonio = [];
+        for (let i = 0; i <= mesesParaAposentar; i++) {
+            if (i % 12 === 0 || i === mesesParaAposentar) {
+                labelsAnos.push(idadeAtual + Math.floor(i / 12));
+                dataPatrimonio.push(calculateFutureValue(patrimonioAtual, aporteMensal, taxaJurosMensal, i));
+            }
+        }
+        
+        myChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: labelsAnos,
+                datasets: [{
+                    label: 'Patrimônio Acumulado (R$)',
+                    data: dataPatrimonio,
+                    borderColor: '#3b82f6',
+                    backgroundColor: 'rgba(59, 130, 246, 0.2)',
+                    fill: true,
+                    tension: 0.1
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: { labels: { color: '#e0e0e0' } }
+                },
+                scales: {
+                    y: { ticks: { color: '#9ca3af', callback: (value) => formatter.format(value) }, grid: { color: 'rgba(255, 255, 255, 0.1)' } },
+                    x: { ticks: { color: '#9ca3af' }, grid: { color: 'rgba(255, 255, 255, 0.1)' }, title: { display: true, text: 'Idade', color: '#e0e0e0' } }
+                }
+            }
+        });
+    });
+
+    document.getElementById('btn-limpar').addEventListener('click', () => {
+        document.getElementById('resultado').style.display = 'none';
+        if (myChart) {
+            myChart.destroy();
+        }
+        const inputs = document.querySelectorAll('input');
+        inputs.forEach(input => input.value = '');
+    });
+</script>
+
+</body>
+</html>
